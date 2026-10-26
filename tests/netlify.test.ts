@@ -14,8 +14,8 @@ for (const path of ['/', '/speech-to-sign', '/sign-to-speech', '/companion']) {
     assert.ok(html.includes('<html'));
     assert.ok(!html.includes('{{'));
     if (path === '/sign-to-speech') {
-      assert.match(html, /id="camToggle" type="button" disabled/);
-      assert.match(html, /which has not been deployed/);
+      assert.match(html, /id="camToggle" type="button">Start camera/);
+      assert.match(html, /processed on this device/);
     }
     for (const match of html.matchAll(/(?:href|src|poster)="\/static\/([^"?#]+)"/g)) {
       await access(`sanketsetu/static/${match[1]}`);
@@ -38,11 +38,12 @@ test('history requires a valid browser identifier before database access', async
     assert.equal((await history(new Request(`https://example.com${path}`, { method }))).status, 400);
   }
 });
-test('health describes unavailable camera service and camera API returns JSON', async () => {
+test('health advertises browser tracking and legacy camera API returns JSON', async () => {
   const response = await health(new Request('https://example.com/api/health'));
   const data = await response.json();
-  assert.equal(data.sign_to_speech.ready, false);
-  assert.match(data.sign_to_speech.error, /has not been deployed/);
+  assert.equal(data.sign_to_speech.ready, true);
+  assert.equal(data.sign_to_speech.mode, 'browser');
+  assert.equal(data.sign_to_speech.translation, false);
   const prediction = await health(new Request('https://example.com/api/sign/predict', { method: 'POST' }));
   assert.equal(prediction.status, 503);
   assert.equal((await prediction.json()).error, 'model_unavailable');

@@ -58,10 +58,11 @@ try{var t=localStorage.getItem("ss-theme")||(matchMedia("(prefers-color-scheme: 
   <main class="stage">
     <section class="card cam-card" aria-label="Camera">
       <h1 class="page-title">Sign → <em class="g1">Speech</em></h1>
-      <p class="page-sub">Fingerspell in front of your camera. Letters build into text you can have read aloud. This prototype recognizes ASL fingerspelling, not ISL signs.</p>
+      <p class="page-sub">Track up to two hands in your browser. Try an open palm, closed fist, thumbs up, thumbs down, pointing up, victory, or “I love you” gesture. This is gesture tracking, not ASL or ISL translation.</p>
 
       <div class="cam-frame">
         <video id="cam" playsinline muted></video>
+        <canvas id="handOverlay" aria-label="Live hand landmarks"></canvas>
         <div class="cam-empty" id="camEmpty">
           <svg viewBox="0 0 24 24" class="ico"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
           <span>Camera is off</span>
@@ -71,7 +72,7 @@ try{var t=localStorage.getItem("ss-theme")||(matchMedia("(prefers-color-scheme: 
 
       <div class="row">
         <button class="btn primary small" id="camToggle" type="button">Start camera</button>
-        <p class="hint">Good light and a plain background help. Camera frames are sent to the server for recognition and are not saved. Use this only where you trust the service host.</p>
+        <p class="hint">Use good light and keep your hands in view. Camera frames are processed on this device and are not uploaded or saved.</p>
       </div>
       <p class="notice" id="notice" role="status" aria-live="polite" hidden></p>
     </section>
@@ -79,12 +80,12 @@ try{var t=localStorage.getItem("ss-theme")||(matchMedia("(prefers-color-scheme: 
     <section class="card out-card" aria-label="Recognised text">
       <div class="readout">
         <div class="letter-box">
-          <span class="label">Current sign</span>
+          <span class="label">Current gesture</span>
           <div id="letter" aria-live="polite" aria-atomic="true">–</div>
         </div>
         <div class="skel-box">
-          <span class="label">What the model sees</span>
-          <img id="skeleton" alt="Hand skeleton used for recognition" hidden>
+          <span class="label">Hand landmarks</span>
+          <canvas id="skeleton" width="240" height="180" aria-label="Tracked hand skeleton" hidden></canvas>
         </div>
       </div>
 
@@ -97,7 +98,7 @@ try{var t=localStorage.getItem("ss-theme")||(matchMedia("(prefers-color-scheme: 
           <svg viewBox="0 0 24 24" class="ico"><path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
           Speak
         </button>
-        <button class="btn ghost small" id="addBtn" type="button" title="Add the sign currently shown">Add letter</button>
+        <button class="btn ghost small" id="addBtn" type="button" title="Add the gesture currently shown">Add gesture</button>
         <button class="btn ghost small" id="spaceBtn" type="button">Space</button>
         <button class="btn ghost small" id="backBtn" type="button">Backspace</button>
         <button class="btn ghost small" id="clearBtn" type="button">Clear</button>
@@ -106,6 +107,6 @@ try{var t=localStorage.getItem("ss-theme")||(matchMedia("(prefers-color-scheme: 
   </main>
 </div>
 <script src="{{ url_for('static', filename='home/home.js') }}"></script>
-<script src="{{ url_for('static', filename='home/sign.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='home/sign.js') }}"></script>
 </body>
 </html>

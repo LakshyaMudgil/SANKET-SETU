@@ -149,7 +149,7 @@
     <div id="history-panel" class="history-panel">
       <div class="history-header">
         <h3>Conversion History</h3>
-        <button id="pairMicrophoneButton" type="button">Pair microphone</button>
+
         <button id="clearHistoryButton">Clear This Browser</button>
         <button id="close-history" class="btn icon-btn">
           <i data-feather="x"></i>
@@ -159,6 +159,7 @@
     </div>
   </div>
 
+  <script src="{{ url_for('static', filename='avatar/microphone.js') }}"></script>
   <script type="module" src="{{ url_for('static', filename='avatar/script.js') }}"></script>
 </body>
 </html>
