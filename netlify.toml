@@ -1,0 +1,14 @@
+[build]
+  publish = "sanketsetu/static"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[functions.pages]
+  included_files = ["sanketsetu/templates/*.html"]
+
+[[redirects]]
+  from = "/static/*"
+  to = "/:splat"
+  status = 200

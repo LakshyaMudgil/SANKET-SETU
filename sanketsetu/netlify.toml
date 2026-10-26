@@ -1,8 +1,0 @@
-[build]
-  publish = "static"
-
-[[redirects]]
-  from = "/*"
-  to = "https://sign-language-app.onrender.com/:splat"
-  status = 200
-  force = true
