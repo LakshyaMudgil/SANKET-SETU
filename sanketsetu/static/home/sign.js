@@ -1,176 +1,82 @@
-/* Sign -> Speech: camera frames go to /api/sign/predict, text comes back, the browser reads it aloud. */
-(() => {
-  const $ = (s) => document.querySelector(s);
-  const video = $("#cam"), camToggle = $("#camToggle"), camEmpty = $("#camEmpty"), chip = $("#handChip");
-  const letterEl = $("#letter"), skel = $("#skeleton"), sentenceEl = $("#sentence"), suggEl = $("#suggestions"), notice = $("#notice");
-
-  const sid = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2))
-    .replace(/[^A-Za-z0-9_-]/g, "");
-  const TARGET_W = 640;     // the CNN was trained on skeletons drawn from ~640px-wide webcam frames
-  const INTERVAL = 150;     // ms between frames (a new one is only sent when the last answer is back)
-
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  let stream = null, running = false, inflight = false, timer = 0, failures = 0;
-
-  function showNotice(msg, kind) {
-    notice.textContent = msg || "";
-    notice.dataset.kind = kind || "info";
-    notice.hidden = !msg;
+// MediaPipe runs locally: no camera frames leave the browser.
+const $ = (id) => document.getElementById(id);
+const video = $('cam'), button = $('camToggle'), overlay = $('handOverlay'), skeleton = $('skeleton');
+const notice = $('notice'), letter = $('letter'), sentence = $('sentence'), chip = $('handChip');
+let stream, recognizer, running = false, generation = 0, timer, lastTime = -1, current = '';
+const labels = { Open_Palm: 'Open palm', Closed_Fist: 'Closed fist', Thumb_Up: 'Thumbs up', Thumb_Down: 'Thumbs down', Pointing_Up: 'Pointing up', Victory: 'Victory', ILoveYou: 'I love you' };
+const edges = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[0,17],[17,18],[18,19],[19,20]];
+function message(text, kind = 'info') { notice.textContent = text; notice.hidden = !text; notice.dataset.kind = kind; }
+function status(text, on = false) { chip.textContent = text; chip.dataset.on = String(on); }
+function draw(canvas, hands) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (const hand of hands) {
+    ctx.strokeStyle = '#65e3bc'; ctx.lineWidth = 3;
+    for (const [a,b] of edges) { ctx.beginPath(); ctx.moveTo(hand[a].x*canvas.width, hand[a].y*canvas.height); ctx.lineTo(hand[b].x*canvas.width, hand[b].y*canvas.height); ctx.stroke(); }
+    ctx.fillStyle = '#fff';
+    for (const p of hand) { ctx.beginPath(); ctx.arc(p.x*canvas.width,p.y*canvas.height,4,0,Math.PI*2); ctx.fill(); }
   }
-  function setChip(text, on) { chip.textContent = text; chip.dataset.on = String(!!on); }
-
-  async function post(url, body) {
-    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    let data = {};
-    try { data = await res.json(); } catch (e) {}
-    return { ok: res.ok, data };
-  }
-
-  /* ---------- camera ---------- */
-  async function startCamera() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      showNotice("This browser can’t use the camera here. Open the site over HTTPS (or localhost).", "error");
-      return;
+}
+function stop() {
+  generation++; running = false; clearTimeout(timer);
+  stream?.getTracks().forEach((track) => track.stop()); stream = null; video.srcObject = null;
+  $('camEmpty').hidden = false; button.textContent = 'Start camera'; button.disabled = false;
+  status('Camera off'); current = ''; letter.textContent = '–'; skeleton.hidden = true;
+  draw(overlay, []); $('addBtn').disabled = true;
+}
+async function start() {
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) { message('Open the site over HTTPS in a browser with camera support.', 'error'); return; }
+  const attempt = ++generation;
+  button.disabled = true; message('Allow camera access. Loading hand tracking…');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video: {width: {ideal: 640}, height: {ideal: 480}, facingMode: 'user'}, audio: false});
+    if (attempt !== generation) { stream.getTracks().forEach(t => t.stop()); stream = null; return; }
+    stream.getVideoTracks()[0].addEventListener('ended', () => { stop(); message('Camera disconnected. Reconnect it and start again.', 'error'); });
+    video.srcObject = stream; await video.play();
+    $('camEmpty').hidden = true;
+    if (!recognizer) {
+      const {FilesetResolver, GestureRecognizer} = await import('/static/vendor/mediapipe/vision_bundle.mjs');
+      const files = await FilesetResolver.forVisionTasks('/static/vendor/mediapipe/wasm');
+      recognizer = await GestureRecognizer.createFromOptions(files, {baseOptions: {modelAssetPath: '/static/vendor/mediapipe/gesture_recognizer.task'}, runningMode: 'VIDEO', numHands: 2});
     }
-    camToggle.disabled = true;
-    showNotice("Loading the recognition model… the first start can take a few seconds.");
-    try {
-      const health = await (await fetch("/api/health")).json();
-      if (!health.sign_to_speech.ready) { showUnavailable(health.sign_to_speech.error); return; }
-
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }, audio: false
-      });
-      video.srcObject = stream;
-      await video.play();
-      running = true; failures = 0;
-      camEmpty.hidden = true;
-      camToggle.textContent = "Stop camera";
-      setChip("Show your hand to the camera", false);
-      showNotice("");
-      schedule();
-    } catch (e) {
-      const msg = e && e.name === "NotAllowedError" ? "Camera permission was blocked. Allow it in the address bar and try again."
-        : e && e.name === "NotFoundError" ? "No camera was found on this device."
-        : "Couldn’t start the camera or reach the server.";
-      showNotice(msg, "error");
-    } finally {
-      camToggle.disabled = false;
+    if (attempt !== generation) return;
+    overlay.width = video.videoWidth; overlay.height = video.videoHeight;
+    lastTime = -1; running = true; button.textContent = 'Stop camera'; button.disabled = false; message('Tracking is on. Hold a gesture, then select Add gesture.'); tick();
+  } catch (error) {
+    if (attempt !== generation) return;
+    stop();
+    const errors = {NotAllowedError: 'Camera access was blocked. Allow Camera in your browser’s site settings and try again.', NotFoundError: 'No camera was found. Connect a camera and try again.', NotReadableError: 'Camera is busy. Close other apps using it and try again.'};
+    message(errors[error.name] || 'Could not load hand tracking. Check your connection, reload, and try again.', 'error');
+  }
+}
+function tick() {
+  if (!running) return;
+  try {
+    if (!document.hidden && video.readyState >= 2 && video.currentTime !== lastTime) {
+      lastTime = video.currentTime;
+      const result = recognizer.recognizeForVideo(video, performance.now());
+      draw(overlay, result.landmarks); draw(skeleton, result.landmarks);
+      skeleton.hidden = !result.landmarks.length;
+      const gesture = result.gestures[0]?.[0];
+      current = gesture?.score >= 0.65 ? labels[gesture.categoryName] || '' : '';
+      letter.textContent = current || (result.landmarks.length ? 'Tracking' : '–'); letter.classList.add('word');
+      $('addBtn').disabled = !current;
+      status(result.landmarks.length ? `${result.landmarks.length} hand${result.landmarks.length > 1 ? 's' : ''} tracked` : 'Show your hands to the camera', !!result.landmarks.length);
     }
-  }
-
-  function stopCamera() {
-    running = false; clearTimeout(timer);
-    if (stream) stream.getTracks().forEach((t) => t.stop());
-    stream = null; video.srcObject = null;
-    camEmpty.hidden = false;
-    camToggle.textContent = "Start camera";
-    setChip("Camera off", false);
-    letterEl.textContent = "–"; letterEl.classList.remove("word");
-    skel.hidden = true;
-  }
-
-  function showUnavailable(detail) {
-    stopCamera();
-    const reason = String(detail || "");
-    if (/StringDType|numpy\.dtypes/i.test(reason)) {
-      showNotice("The Python environment has incompatible NumPy and TensorFlow versions. Recreate it with Python 3.11, then reinstall requirements.txt (NumPy 1.26.4, TensorFlow/Keras 2.15).", "error");
-      return;
-    }
-    showNotice("Sign recognition isn’t available on the server yet." + (reason ? " (" + reason + ")" : ""), "error");
-  }
-
-  /* ---------- frame loop ---------- */
-  function schedule() { timer = setTimeout(tick, INTERVAL); }
-
-  async function tick() {
-    if (!running) return;
-    if (!inflight && !document.hidden && video.readyState >= 2 && video.videoWidth) {
-      inflight = true;
-      try {
-        const scale = Math.min(1, TARGET_W / video.videoWidth);
-        canvas.width = Math.round(video.videoWidth * scale);
-        canvas.height = Math.round(video.videoHeight * scale);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const { ok, data } = await post("/api/sign/predict", { session: sid, frame: canvas.toDataURL("image/jpeg", 0.8) });
-        if (!ok) {
-          if (data.error === "model_unavailable") { showUnavailable(data.detail); return; }
-          failures++;
-          if (failures >= 3) showNotice(data.message || "Recognition keeps failing. Check the server log.", "error");
-        } else {
-          failures = 0; showNotice(""); render(data);
-        }
-      } catch (e) {
-        failures++;
-        if (failures >= 3) showNotice("Lost connection to the server.", "error");
-      } finally {
-        inflight = false;
-      }
-    }
-    if (running) schedule();
-  }
-
-  /* ---------- rendering ---------- */
-  const SPECIAL = { " ": "space", "  ": "space", "next": "next", "Backspace": "backspace" };
-
-  function render(d) {
-    if (d.hand) {
-      setChip("Hand detected", true);
-      const l = d.letter;
-      const special = l != null && SPECIAL[l];
-      letterEl.textContent = special || (l && l.trim() ? l : "·");
-      letterEl.classList.toggle("word", !!special);
-      if (d.skeleton) { skel.src = d.skeleton; skel.hidden = false; }
-    } else {
-      setChip("Show your hand to the camera", false);
-      letterEl.textContent = "–"; letterEl.classList.remove("word");
-    }
-    renderText(d);
-  }
-
-  function renderText(d) {
-    const s = d.sentence || "";
-    sentenceEl.textContent = s.trim() ? s : "";
-    suggEl.innerHTML = "";
-    (d.suggestions || []).forEach((w, i) => {
-      const b = document.createElement("button");
-      b.type = "button"; b.textContent = w;
-      b.addEventListener("click", () => act("suggest", i));
-      suggEl.appendChild(b);
-    });
-  }
-
-  /* ---------- buttons ---------- */
-  async function act(action, index) {
-    try {
-      const { ok, data } = await post("/api/sign/action", { session: sid, action, index });
-      if (ok) renderText(data);
-      else showNotice(data.message || "That didn’t work.", "error");
-    } catch (e) { showNotice("Lost connection to the server.", "error"); }
-  }
-
-  function speak() {
-    const text = sentenceEl.textContent.trim();
-    if (!text) { showNotice("No recognized text to speak yet. Add a letter or sign a letter first.", "info"); return; }
-    if (!("speechSynthesis" in window)) { showNotice("This browser can’t read text aloud.", "error"); return; }
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.toLowerCase());
-    u.lang = "en-IN"; u.rate = 0.9;
-    u.onerror = (event) => {
-      const message = event.error === "synthesis-failed"
-        ? "No working speech voice is available in this browser or on this device. Enable a system voice and try again."
-        : `Speech output failed: ${event.error || "browser speech service error"}`;
-      showNotice(message, "error");
-    };
-    speechSynthesis.speak(u);
-  }
-
-  camToggle.addEventListener("click", () => (running ? stopCamera() : startCamera()));
-  $("#speakBtn").addEventListener("click", speak);
-  $("#addBtn").addEventListener("click", () => act("add_letter"));
-  $("#spaceBtn").addEventListener("click", () => act("space"));
-  $("#backBtn").addEventListener("click", () => act("backspace"));
-  $("#clearBtn").addEventListener("click", () => act("clear"));
-  window.addEventListener("pagehide", () => { if (stream) stream.getTracks().forEach((t) => t.stop()); });
-})();
+    timer = setTimeout(tick, 80);
+  } catch { stop(); message('Hand tracking stopped. Try starting the camera again.', 'error'); }
+}
+$('addBtn').disabled = true;
+button.addEventListener('click', () => running ? stop() : start());
+$('addBtn').addEventListener('click', () => { if (current) sentence.textContent += (sentence.textContent && !sentence.textContent.endsWith(' ') ? ' ' : '') + current; });
+$('spaceBtn').addEventListener('click', () => { sentence.textContent += ' '; });
+$('backBtn').addEventListener('click', () => { sentence.textContent = sentence.textContent.slice(0,-1); });
+$('clearBtn').addEventListener('click', () => { sentence.textContent = ''; message(''); });
+$('speakBtn').addEventListener('click', () => {
+  if (!sentence.textContent.trim()) { message('Add a recognized gesture before selecting Speak.'); return; }
+  if (!window.speechSynthesis) { message('Speech output is unavailable in this browser.', 'error'); return; }
+  speechSynthesis.cancel(); const speech = new SpeechSynthesisUtterance(sentence.textContent); speech.lang = 'en-IN';
+  speech.onerror = (event) => { if (!['canceled','interrupted'].includes(event.error)) message('Speech output failed. Check the device voice and audio settings.', 'error'); };
+  speechSynthesis.speak(speech);
+});
+window.addEventListener('pagehide', () => { stop(); recognizer?.close(); recognizer = null; });

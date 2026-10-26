@@ -549,61 +549,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); translate(); }
     });
 
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      mic.disabled = true;
-      status.textContent = 'Voice input is not supported by this browser. Try current Chrome or Edge over HTTPS or localhost; you can still type.';
-      return;
-    }
-
-    let rec = null;
-    const setListening = (on) => {
-      state.listening = on;
-      mic.classList.toggle('recording', on);
-      mic.setAttribute('aria-pressed', String(on));
-      micLabel.textContent = on ? 'Listening… (tap to stop)' : 'Speak';
-    };
-
-    mic.addEventListener('click', () => {
-      if (state.listening && rec) { rec.stop(); return; }
-      rec = new SR();
-      rec.lang = lang.value;
-      rec.interimResults = true;
-      rec.continuous = false;
-      let finalText = '';
-      let startTimer = 0;
-      rec.onstart = () => { clearTimeout(startTimer); setListening(true); status.textContent = ''; };
-      rec.onresult = (ev) => {
-        let interim = '';
-        for (let i = ev.resultIndex; i < ev.results.length; i++) {
-          const r = ev.results[i];
-          if (r.isFinal) finalText += r[0].transcript; else interim += r[0].transcript;
-        }
-        input.value = (finalText + interim).trim();
-      };
-      rec.onerror = (ev) => {
-        clearTimeout(startTimer);
-        const msg = { 'not-allowed': 'Microphone permission was blocked.', 'no-speech': "I didn't hear anything. Try again.",
-                      'audio-capture': 'No microphone found. Check that one is connected and enabled.', 'network': 'Speech service unreachable (voice input needs internet).' }[ev.error];
-        status.textContent = msg || `Voice input error: ${ev.error}`;
-      };
-      rec.onend = () => {
-        clearTimeout(startTimer);
-        setListening(false);
-        if (finalText.trim()) { input.value = finalText.trim(); translate(); }
-      };
-      try {
-        status.textContent = 'Starting voice input…';
-        rec.start();
-        startTimer = setTimeout(() => {
-          if (!state.listening) status.textContent = 'Voice recognition did not start. Check microphone permission and browser support.';
-        }, 5000);
-      } catch (e) {
-        clearTimeout(startTimer);
-        setListening(false);
-        status.textContent = `Could not start microphone: ${e.message}`;
-      }
-    });
   }
 
   // follow the theme chosen on the home page (same localStorage key), and keep it in sync
@@ -619,42 +564,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function initApp() {
-    feather.replace();
+    window.feather?.replace();
     initSidebarToggle();
     // Keep typing, voice and theme controls usable even if the remote 3D model
     // or animation modules are slow to load or unavailable.
     initTheme();
     initInput();
     await init3DSystem();
-      // Receive speech recognized by SanketSetu
-  let sanketsetuBusy = false;
-  let bridgePairingCode = localStorage.getItem('sanketsetu-bridge-pairing-code');
-  document.getElementById('pairMicrophoneButton')?.addEventListener('click', () => {
-    const code = prompt('Enter the pairing code configured as SANKETSETU_PAIRING_CODE on the server.');
-    if (code && code.trim()) {
-      bridgePairingCode = code.trim();
-      localStorage.setItem('sanketsetu-bridge-pairing-code', bridgePairingCode);
-    }
-  });
-
-  setInterval(async () => {
-    if (!bridgePairingCode || sanketsetuBusy) return;
-
-    sanketsetuBusy = true;
-
-    try {
-      const response = await fetch('/sanketsetu/next', { headers: { 'X-Pairing-Code': bridgePairingCode } });
-      const data = await response.json();
-
-      if (data.text) {
-        sendTextForProcessing(data.text);
-      }
-    } catch (error) {
-      console.error('SanketSetu polling error:', error);
-    } finally {
-      sanketsetuBusy = false;
-    }
-  }, 500);
     // "Watch Demo" on the home page lands here with ?demo=1
     if (new URLSearchParams(location.search).get('demo') === '1') {
       const demo = 'Hello, how are you?';
