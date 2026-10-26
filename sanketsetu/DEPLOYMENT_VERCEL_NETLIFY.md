@@ -2,7 +2,7 @@
 
 The Flask app can run directly on Vercel for text-to-sign and the companion. Its server-side camera recognizer is disabled there: Vercel's supported Python runtime is 3.12+, while this project's TensorFlow 2.15/MediaPipe stack is pinned for Python 3.11. The full camera stack remains in `requirements-vision.txt` and is installed by the Docker/Render deployment.
 
-Netlify is configured here as an HTTPS custom-domain proxy to the Flask backend. It does not run this Flask application as a Netlify Function.
+Netlify serves the existing interface with native Node functions for text processing, history, and the optional companion. The Python camera recognizer remains a separate service.
 
 ## Vercel
 
@@ -20,14 +20,15 @@ The root `requirements.txt` contains the Vercel-compatible core. Do not install 
 
 ## Netlify
 
-Netlify serves the project through the proxy rule in `netlify.toml`; the Flask backend must already be deployed separately.
+Import the repository with its root as the base directory. The root `netlify.toml` publishes `sanketsetu/static` and deploys the TypeScript functions in `netlify/functions`. No build command or separate Python host is required for the pages, text processing, or history. The functions render the existing templates and preserve `/static/` asset URLs.
 
-1. Deploy the Docker service described by `render.yaml` to Render or another host that runs persistent Flask containers.
-2. In `netlify.toml`, replace `https://sign-language-app.onrender.com` with the exact HTTPS origin assigned to your backend.
-3. Import this repository into Netlify with the repository root as the base directory. `netlify.toml` sets `static` as the publish directory and proxies every path, including API and static asset requests, to the backend.
-4. Add the subdomain in **Domain management** and configure the DNS record Netlify displays. Wait for HTTPS provisioning.
+Text-to-sign uses Netlify AI Gateway to translate Hindi/English into an approximate content-word gloss. It is a prototype, not a verified ISL translation; unsupported vocabulary uses the existing fingerspelling animations. AI requests use the site's Netlify credits. Conversion history uses Netlify Database; its schema and migration are included in the repository.
 
-The Netlify proxy has a 26-second request timeout. Avoid a sleeping backend for camera requests, and use a backend with enough memory before setting `SIGN_TO_SPEECH_ENABLED=true`. The current Render free configuration disables camera recognition. Since the browser and Flask app share the Netlify origin through the proxy, `CORS_ORIGINS` can remain blank.
+The optional memory companion keeps its Hindsight integration. Configure its credentials through the hosting dashboard, never in source files. Without configuration, the page explains that memory is unavailable.
+
+Camera recognition still requires the Python 3.11 TensorFlow/MediaPipe service. It does not run inside the Node functions. The health endpoint reports it as unavailable, and the camera page explains the limitation before requesting camera access. The standalone Python microphone bridge is not enabled on this deployment; browser speech input remains available.
+
+For local development, use `netlify dev --port 8889`. Run `npm run check` and `npm test` for validation.
 
 ## Requirements and Secrets
 

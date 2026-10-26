@@ -1,0 +1,22 @@
+{
+  "name": "sanketsetu-netlify",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@netlify/database": "^2.0.1",
+    "@netlify/functions": "^6.0.3",
+    "@vectorize-io/hindsight-client": "^1.1.0",
+    "drizzle-orm": "^1.0.0-beta.22",
+    "openai": "^7.44.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "drizzle-kit": "^1.0.0-beta.22",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
