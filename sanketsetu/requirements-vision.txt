@@ -1,0 +1,9 @@
+# Optional server-side camera recognition stack. Requires Python 3.11.
+mediapipe==0.10.21
+opencv-contrib-python==4.10.0.84
+# Keep these compatible with NumPy 1.26 and TensorFlow 2.15.
+jax==0.4.30
+jaxlib==0.4.30
+tensorflow-cpu==2.15.1
+keras==2.15.0
+pyenchant==3.2.2

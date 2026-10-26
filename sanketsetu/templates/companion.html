@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Setu Companion · SanketSetu</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='companion/companion.css') }}">
+</head>
+<body>
+  <header><a class="brand" href="/">Sanket<span>Setu</span></a><nav><a href="/">Home</a><a href="/speech-to-sign">Speech → Sign</a><a href="/sign-to-speech">Sign → Speech</a></nav></header>
+  <main>
+    <section class="intro"><p class="eyebrow">HINDSIGHT MEMORY AGENT</p><h1>Meet Setu, your<br><em>communication companion.</em></h1><p>Talk through a phrase, a situation, or a preference. Setu recalls useful context from your earlier chats and gets more personal over time.</p><div class="status" id="status" role="status">Checking memory connection…</div></section>
+    <section class="chat" aria-label="Chat with Setu">
+      <div class="chat-head"><div class="avatar">S</div><div><strong>Setu</strong><small>ISL · Hindi · English</small></div><span class="live-dot"></span></div>
+      <div id="messages" class="messages" role="log" aria-live="polite" aria-relevant="additions text"><div class="bubble agent">Namaste! I can help you prepare for a conversation, find a clearer way to say something, or remember what works for you. What would you like help with?</div></div>
+      <form id="chatForm"><label class="sr-only" for="message">Your message</label><textarea id="message" maxlength="1200" rows="2" placeholder="For example: I prefer short Hindi phrases when speaking with my grandmother…" required></textarea><div class="form-row"><small>Your memory stays in your Hindsight bank for this browser.</small><button id="send" type="submit">Send <span aria-hidden="true">↗</span></button></div></form>
+    </section>
+    <aside class="memory"><div class="memory-icon">✳</div><div><strong>Memory makes Setu better</strong><p>Your messages are retained in Hindsight. Before replying, Setu recalls relevant past context. You can delete this browser’s memory bank below.</p><button id="forget" type="button">Forget my memory</button><span id="forgetStatus" role="status" aria-live="polite"></span></div><div id="recalled" class="recalled" hidden></div></aside>
+    <section class="demo-story"><p class="eyebrow">TRY THE LEARNING LOOP</p><h2>Make memory visible in your demo</h2><ol><li><b>First chat</b><span>Tell Setu a real preference, like “Please keep phrases simple and in Hindi.”</span></li><li><b>Come back later</b><span>Ask for help with a new situation without repeating that preference.</span></li><li><b>Show the recall</b><span>The memory card shows what Hindsight recalled before Setu responded.</span></li></ol></section>
+  </main>
+  <script src="{{ url_for('static', filename='companion/companion.js') }}" defer></script>
+</body></html>

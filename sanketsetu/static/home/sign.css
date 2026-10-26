@@ -1,0 +1,39 @@
+/* Sign -> Speech page. Builds on the tokens + components in home.css so both pages stay in sync. */
+.stage{width:100%;max-width:1272px;flex:1;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:start;padding:40px 0 24px}
+.card{padding:28px;background:var(--glass);border:1px solid var(--line);border-radius:36px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.page-title{margin:0 0 6px;font:600 clamp(32px,3.6vw,46px)/1.15 var(--serif);letter-spacing:-.01em}
+.page-title em{font-style:normal;-webkit-background-clip:text;background-clip:text;color:transparent;background-image:linear-gradient(90deg,var(--g2a),var(--g2b))}
+.page-sub{margin-bottom:20px;font-size:16.5px;line-height:1.5;color:var(--muted)}
+
+.cam-frame{position:relative;aspect-ratio:4/3;border-radius:24px;overflow:hidden;background:#05070f;border:1px solid var(--line)}
+.cam-frame video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.cam-empty{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:10px;color:var(--muted);font-size:15px}
+.cam-empty[hidden]{display:none}
+.cam-empty .ico{width:44px;height:44px}
+.chip{position:absolute;left:14px;top:14px;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:500;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.chip[data-on="true"]{background:rgba(20,150,90,.75)}
+
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
+.btn.small{height:48px;padding:0 22px;font-size:15px}
+.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+.hint{flex:1 1 220px;font-size:13px;line-height:1.5;color:var(--muted)}
+.notice{margin-top:14px;padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.5;background:var(--glass-2);border:1px solid var(--line)}
+.notice[data-kind="error"]{border-color:#ff6b7a;color:#ffd5da}
+.notice[hidden]{display:none}
+
+.label{display:block;margin-bottom:8px;font-size:12.5px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.readout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-bottom:22px}
+.letter-box,.skel-box{padding:16px 18px;border-radius:20px;background:var(--glass-2);border:1px solid var(--line);min-height:150px}
+#letter{font:600 64px/1.1 var(--serif);word-break:break-word}
+#letter.word{font-size:30px;padding-top:14px}
+.skel-box img{display:block;width:100%;max-width:150px;aspect-ratio:1;object-fit:contain;border-radius:12px;background:#fff}
+.skel-box img[hidden]{display:none}
+
+.sentence{min-height:110px;padding:16px 18px;border-radius:20px;background:var(--glass-2);border:1px solid var(--line);font:600 28px/1.4 var(--serif);letter-spacing:.04em;white-space:pre-wrap;word-break:break-word}
+.sentence:empty::before{content:"Letters you sign will appear here";font:400 16px var(--sans);letter-spacing:0;color:var(--muted)}
+.suggest{display:flex;flex-wrap:wrap;gap:8px;min-height:16px;margin-top:12px}
+.suggest button{padding:8px 16px;border-radius:999px;font-size:14px;font-weight:500;background:var(--ghost);border:1px solid var(--line);transition:border-color .2s}
+.suggest button:hover{border-color:var(--accent)}
+
+@media (max-width:1100px){.stage{grid-template-columns:1fr;padding-top:24px}}
+@media (max-width:700px){.card{padding:20px;border-radius:28px}.readout{grid-template-columns:1fr}.sentence{font-size:22px}.btn.small{flex:1 1 40%;justify-content:center}}

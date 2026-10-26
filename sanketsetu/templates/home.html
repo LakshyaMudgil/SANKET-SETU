@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#050b24">
+<title>SanketSetu – A bridge between signs and speech</title>
+<script>/* set theme before first paint (no flash) */
+try{var t=localStorage.getItem("ss-theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='home/home.css') }}">
+</head>
+<body>
+<!-- background videos: sunset (light theme) and moonlit lake (dark theme) -->
+<div class="bg bg-light" aria-hidden="true">
+  <video id="vidLight" muted loop playsinline preload="none" poster="{{ url_for('static', filename='videos/light-poster.jpg') }}"><source src="{{ url_for('static', filename='videos/light.mp4') }}" type="video/mp4"></video>
+  <div class="tint"></div>
+</div>
+<div class="bg bg-dark" aria-hidden="true">
+  <video id="vidDark" muted loop playsinline preload="none" poster="{{ url_for('static', filename='videos/dark-poster.jpg') }}"><source src="{{ url_for('static', filename='videos/dark.mp4') }}" type="video/mp4"></video>
+  <div class="tint"></div>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="la1"/><stop offset="1" class="la2"/></linearGradient>
+    <linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="lb1"/><stop offset="1" class="lb2"/></linearGradient>
+    <symbol id="hand" viewBox="0 0 24 32">
+      <rect x="2" y="3" width="4.4" height="16" rx="2.2"/><rect x="7.4" y="0" width="4.4" height="18" rx="2.2"/>
+      <rect x="12.8" y="1" width="4.4" height="17" rx="2.2"/><rect x="18" y="5" width="4" height="14" rx="2"/>
+      <rect x="2" y="12" width="20" height="18" rx="8"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="hero" id="top">
+  <header class="nav">
+    <a class="brand" href="#top" aria-label="SanketSetu home">
+      <svg class="logo" viewBox="0 0 56 48" aria-hidden="true">
+        <use href="#hand" x="2" y="6" width="26" height="36" fill="url(#gA)" transform="rotate(-22 15 24)"/>
+        <use href="#hand" x="26" y="8" width="26" height="36" fill="url(#gB)" transform="rotate(22 39 26)"/>
+      </svg>
+      <span class="wordmark">Sanket<span>Setu</span></span>
+    </a>
+    <nav class="links" aria-label="Main">
+      <a href="#top" class="active">Home</a>
+      <a href="#how">How it Works</a>
+      <a href="#about">About</a>
+      <a href="#resources">Resources</a>
+      <a href="{{ url_for('companion') }}">Memory companion</a>
+    </nav>
+    <button class="theme" id="themeToggle" type="button" aria-pressed="true" aria-label="Switch to light theme">
+      <svg viewBox="0 0 24 24" class="ico i-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg viewBox="0 0 24 24" class="ico i-moon"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </header>
+
+  <main class="main">
+    <section class="copy">
+      <p class="eyebrow"><i></i>Indian Sign Language <svg viewBox="0 0 24 24" class="ico"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg> Hindi / English</p>
+      <h1>A bridge between<br><em class="g1">signs</em> and <em class="g2">speech.</em></h1>
+      <p class="lead">Connect through Indian Sign Language, text, and voice —<br>one conversation at a time.</p>
+      <div class="ctas">
+        <button class="btn primary" type="button" data-action="live">
+          <svg viewBox="0 0 24 24" class="ico"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          Try Live Translator
+          <svg viewBox="0 0 24 24" class="ico"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <button class="btn ghost" type="button" data-action="demo">
+          <svg viewBox="0 0 24 24" class="ico"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/></svg>
+          Watch Demo
+        </button>
+      </div>
+      <p class="tag">
+        <svg viewBox="0 0 24 24" class="ico"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>
+        More inclusive. A more connected world.
+      </p>
+    </section>
+
+    <section class="panel" aria-label="Choose a translator">
+      <a class="mode" href="{{ url_for('sign_to_speech') }}" data-action="sign-to-speech">
+        <span class="tile t1"><svg viewBox="0 0 24 24" class="ico"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-6-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></span>
+        <span class="txt"><strong>Sign → Speech</strong><span>Use your camera to sign.<br>Get text and voice output.</span></span>
+        <span class="go"><svg viewBox="0 0 24 24" class="ico"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+      <a class="mode" href="{{ url_for('speech_to_sign') }}" data-action="speech-to-sign">
+        <span class="tile t2"><svg viewBox="0 0 24 24" class="ico"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg></span>
+        <span class="txt"><strong>Speech → Sign</strong><span>Speak or type in Hindi/English.<br>See the sign video.</span></span>
+        <span class="go"><svg viewBox="0 0 24 24" class="ico"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+      <a class="mode" href="{{ url_for('companion') }}">
+        <span class="tile t1"><svg viewBox="0 0 24 24" class="ico"><path d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Z"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 17h8"/></svg></span>
+        <span class="txt"><strong>Setu Companion · Hindsight</strong><span>A communication agent that remembers<br>what works for you over time.</span></span>
+        <span class="go"><svg viewBox="0 0 24 24" class="ico"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+    </section>
+  </main>
+
+  <footer class="features">
+    <div class="feat"><svg viewBox="0 0 24 24" class="ico c1"><path d="M12 5a3 3 0 1 0-6 .1 4 4 0 0 0-2.5 5.8 4 4 0 0 0 .5 6.6A4 4 0 1 0 12 18zM12 5a3 3 0 1 1 6 .1 4 4 0 0 1 2.5 5.8 4 4 0 0 1-.5 6.6A4 4 0 1 1 12 18zM12 5v13"/></svg><div><h3>AI-Powered</h3><p>Accurate sign recognition<br>and translation.</p></div></div>
+    <div class="feat"><svg viewBox="0 0 24 24" class="ico c2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><div><h3>Inclusive</h3><p>Bridging communication<br>gaps for everyone.</p></div></div>
+    <div class="feat"><svg viewBox="0 0 24 24" class="ico c3"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M9 12l2 2 4-4"/></svg><div><h3>Accessible</h3><p>Built for real-world<br>use.</p></div></div>
+    <div class="feat"><svg viewBox="0 0 24 24" class="ico c4"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg><div><h3>Powered by AI</h3><p>Smarter, faster,<br>more human.</p></div></div>
+  </footer>
+</div>
+<script src="{{ url_for('static', filename='home/home.js') }}"></script>
+</body>
+</html>

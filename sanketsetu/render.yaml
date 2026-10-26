@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: sign-language-app
+    runtime: docker
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: HINDSIGHT_API_KEY
+        sync: false
+      - key: HINDSIGHT_BASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SANKETSETU_PAIRING_CODE
+        sync: false
+      - key: SIGN_TO_SPEECH_ENABLED
+        value: "false"
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: GUNICORN_THREADS
+        value: "2"

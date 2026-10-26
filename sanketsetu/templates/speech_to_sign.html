@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speech → Sign · SanketSetu</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='avatar/styles.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+  <!-- Import map to load Three.js directly from jsDelivr -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <button id="menu-btn" class="menu-btn" aria-label="Toggle menu">
+    <i data-feather="menu"></i>
+  </button>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+  <div class="app-container">
+    <div class="sidebar">
+      <div class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50" class="logo-img">
+          <!-- Background Shape -->
+          <rect x="5" y="5" width="40" height="40" rx="8" fill="#4361ee" />
+          
+          <!-- Hand Symbol -->
+          <path d="M25 12 L25 32 Q25 38, 20 38 T15 32 L15 20 Q15 14, 20 14 T25 20" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M35 12 L35 32 Q35 38, 30 38 T25 32 L25 20" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          
+          <!-- Sound Waves -->
+          <path d="M45 18 Q50 18, 50 25 Q50 32, 45 32" stroke="#4cc9f0" stroke-width="2" fill="none" stroke-linecap="round" />
+          <path d="M50 15 Q58 15, 58 25 Q58 35, 50 35" stroke="#4cc9f0" stroke-width="2" fill="none" stroke-linecap="round" />
+          <path d="M55 12 Q65 12, 65 25 Q65 38, 55 38" stroke="#4cc9f0" stroke-width="2" fill="none" stroke-linecap="round" />
+          
+          <!-- Text -->
+          <text x="70" y="22" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#4361ee">ISL</text>
+          <text x="70" y="36" font-family="Inter, sans-serif" font-size="12" font-weight="500" fill="#6c757d">Translator</text>
+        </svg>
+      </div>
+      <nav class="nav-menu">
+        <a href="{{ url_for('home') }}" class="nav-item">
+          <i data-feather="home"></i>
+          <span>Home</span>
+        </a>
+        <a href="{{ url_for('speech_to_sign') }}" class="nav-item active">
+          <i data-feather="mic"></i>
+          <span>Speech → Sign</span>
+        </a>
+        <a href="{{ url_for('sign_to_speech') }}" class="nav-item">
+          <i data-feather="camera"></i>
+          <span>Sign → Speech</span>
+        </a>
+        <a href="{{ url_for('companion') }}" class="nav-item">
+          <i data-feather="message-circle"></i>
+          <span>Setu Companion</span>
+        </a>
+        <a href="#" id="history-button" class="nav-item">
+          <i data-feather="clock"></i>
+          <span>History</span>
+        </a>
+      </nav>
+      <div class="theme-toggle">
+        <i data-feather="moon"></i>
+        <span>Dark Mode</span>
+        <div class="toggle-switch"></div>
+      </div>
+    </div>
+
+    <main class="content">
+      <header class="content-header">
+        <h1>Speech to Indian Sign Language Translator</h1>
+        <p class="subtitle">Translate spoken or typed language to ISL in real-time</p>
+      </header>
+
+      <div class="workspace">
+        <div class="input-panel">
+          <div class="panel-header">
+            <div class="controls">
+              <button id="micButton" class="btn primary" type="button" aria-pressed="false">
+                <i data-feather="mic"></i>
+                <span id="micLabel">Speak</span>
+              </button>
+              <label class="lang-picker">
+                <span class="sr-only">Speech language</span>
+                <select id="langSelect" aria-label="Speech language">
+                  <option value="en-IN">English (India)</option>
+                  <option value="hi-IN">हिन्दी (Hindi)</option>
+                </select>
+              </label>
+              <button id="clearButton" class="btn secondary" type="button">
+                <i data-feather="trash-2"></i>
+                <span>Clear</span>
+              </button>
+            </div>
+          </div>
+          <div class="transcript-container">
+            <textarea id="textInput" rows="3" placeholder="Speak, or type a sentence and press Translate…" aria-label="Text to translate"></textarea>
+            <div class="input-row">
+              <p id="micStatus" class="mic-status" role="status" aria-live="polite"></p>
+              <button id="translateButton" class="btn primary" type="button">
+                <i data-feather="send"></i>
+                <span>Translate</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="output-panel">
+          <div class="grammar-section">
+            <h2>ISL Grammar</h2>
+            <div id="islBox" class="result-box"></div>
+            <p id="fingerspellNotice" role="status" aria-live="polite" hidden>Unsupported vocabulary is shown by letter-by-letter fingerspelling.</p>
+            <!-- New Processed Text Field -->
+            <div class="processed-text-section">
+              <h2>Processed Text</h2>
+              <textarea id="processed-text" readonly placeholder="processed text will appear here..."  class="result-box"></textarea>
+            </div>
+          </div>
+          
+          <div class="animation-section">
+            <h2>Sign Language Animation</h2>
+            <!-- Animation Speed Control Slider -->
+            <div class="animation-controls">
+              <label for="speedSlider">Animation Speed: <span id="speedValue">1.0x</span></label>
+              <input type="range" id="speedSlider" min="0.1" max="2" step="0.1" value="1.0">
+            </div>
+            <!-- The Three.js canvas will be inserted here -->
+            <div id="animationContainer" class="animation-container">
+              <div class="placeholder-animation">
+                <i data-feather="video"></i>
+                <p>Animation will appear here</p>
+              </div>
+            </div>
+            <!-- Hidden element for text tracking (optional if not used) -->
+            <textarea id="output-text" class="hidden"></textarea>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- History Panel -->
+    <div id="history-panel" class="history-panel">
+      <div class="history-header">
+        <h3>Conversion History</h3>
+        <button id="pairMicrophoneButton" type="button">Pair microphone</button>
+        <button id="clearHistoryButton">Clear This Browser</button>
+        <button id="close-history" class="btn icon-btn">
+          <i data-feather="x"></i>
+        </button>
+      </div>
+      <div id="history-list" class="history-list"></div>
+    </div>
+  </div>
+
+  <script type="module" src="{{ url_for('static', filename='avatar/script.js') }}"></script>
+</body>
+</html>
