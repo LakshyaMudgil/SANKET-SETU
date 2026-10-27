@@ -3,16 +3,55 @@ const $ = (id) => document.getElementById(id);
 const video = $('cam'), button = $('camToggle'), overlay = $('handOverlay'), skeleton = $('skeleton');
 const notice = $('notice'), letter = $('letter'), sentence = $('sentence'), chip = $('handChip');
 let stream, recognizer, running = false, generation = 0, timer, lastTime = -1, current = '';
+let candidate = '', candidateSince = 0, committed = '', releasedSince = null;
 
-const labels = {
-  Open_Palm: 'Open palm',
-  Closed_Fist: 'Closed fist',
-  Thumb_Up: 'Thumbs up',
-  Thumb_Down: 'Thumbs down',
-  Pointing_Up: 'Pointing up',
-  Victory: 'Victory',
-  ILoveYou: 'I love you'
-};
+function resetCapture() {
+  candidate = committed = '';
+  candidateSince = 0;
+  releasedSince = null;
+}
+
+function speak(text) {
+  if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
+    message('Speech output is unavailable in this browser. Your text is still available.', 'error');
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const speech = new window.SpeechSynthesisUtterance(text);
+  speech.lang = 'en-IN';
+  speech.onerror = (event) => {
+    if (!['canceled', 'interrupted'].includes(event.error)) {
+      message('Speech output failed. Tap Speak to retry and check your device volume.', 'error');
+    }
+  };
+  window.speechSynthesis.speak(speech);
+}
+
+function appendGesture() {
+  if (!current) return;
+  sentence.textContent = [sentence.textContent.trim(), current].filter(Boolean).join(' ');
+  committed = current;
+  if ($('autoSpeak')?.checked) speak(current);
+}
+
+// Require a steady sign, then a deliberate release before repeating it.
+function captureGesture(text, now) {
+  if (!text) {
+    candidate = '';
+    if (releasedSince === null) releasedSince = now;
+    if (now - releasedSince >= 500) committed = '';
+    return;
+  }
+  releasedSince = null;
+  if (candidate !== text) {
+    candidate = text;
+    candidateSince = now;
+  }
+  if ($('autoCapture')?.checked && text !== committed && now - candidateSince >= 900) {
+    appendGesture();
+    message('Sign added to text. Relax your hand briefly to repeat the same sign.');
+  }
+}
 
 const gestureTextMap = {
   Open_Palm: 'HELLO',
@@ -70,6 +109,8 @@ function stop() {
   button.disabled = false;
   status('Camera off');
   current = '';
+  resetCapture();
+  window.speechSynthesis?.cancel();
   letter.textContent = '–';
   skeleton.hidden = true;
   draw(overlay, []);
@@ -127,7 +168,8 @@ async function start() {
     running = true;
     button.textContent = 'Stop camera';
     button.disabled = false;
-    message('Tracking is on. Hold a gesture, then select Add gesture.');
+    resetCapture();
+    message('Tracking is on. Hold a supported gesture steady for one second to add it to text.');
     tick();
   } catch (error) {
     if (attempt !== generation) return;
@@ -157,11 +199,12 @@ function tick() {
       const confidence = gesture?.score || 0;
 
       if (confidence >= 0.65 && rawGestureName) {
-        current = gestureTextMap[rawGestureName] || labels[rawGestureName] || rawGestureName;
+        current = gestureTextMap[rawGestureName] || ''; // Ignore unknown / None categories.
       } else {
         current = '';
       }
 
+      captureGesture(current, performance.now());
       letter.textContent = current || (result.landmarks.length ? 'Tracking' : '–');
       letter.classList.add('word');
       $('addBtn').disabled = !current;
@@ -184,9 +227,7 @@ $('addBtn').addEventListener('click', () => {
     return;
   }
 
-  const nextText = sentence.textContent.trim();
-  const prefix = nextText && !nextText.endsWith(' ') ? ' ' : '';
-  sentence.textContent = `${nextText}${prefix}${current}`;
+  appendGesture();
   message('Gesture added. Tap Speak to read it aloud.');
 });
 
@@ -200,7 +241,9 @@ $('backBtn').addEventListener('click', () => {
 
 $('clearBtn').addEventListener('click', () => {
   sentence.textContent = '';
-  message('');
+  committed = current;
+  window.speechSynthesis?.cancel();
+  message('Text cleared. Relax your hand, then show the next sign.');
 });
 
 $('speakBtn').addEventListener('click', () => {
@@ -215,15 +258,7 @@ $('speakBtn').addEventListener('click', () => {
     return;
   }
 
-  speechSynthesis.cancel();
-  const speech = new SpeechSynthesisUtterance(textToSpeak);
-  speech.lang = 'en-IN';
-  speech.onerror = (event) => {
-    if (!['canceled', 'interrupted'].includes(event.error)) {
-      message('Speech output failed. Check the device voice and audio settings.', 'error');
-    }
-  };
-  speechSynthesis.speak(speech);
+  speak(textToSpeak);
   message('Speaking…');
 });
 
