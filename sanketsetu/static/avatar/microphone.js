@@ -23,9 +23,18 @@
 
   mic.addEventListener('click', () => {
     if (listening || starting) {
-      recognition?.abort();
-      reset();
-      status.textContent = 'Voice input stopped.';
+      // Graceful stop lets the service return the final words before translating.
+      if (listening && recognition?.stop) {
+        recognition.stop();
+        label.textContent = 'Finishing…';
+        status.textContent = 'Finishing speech capture…';
+      } else {
+        const previous = recognition;
+        recognition = null;
+        previous?.abort();
+        reset();
+        status.textContent = 'Voice input stopped.';
+      }
       return;
     }
 
@@ -41,6 +50,7 @@
     status.textContent = 'Allow microphone access, then speak.';
 
     rec.onstart = () => {
+      if (recognition !== rec) return;
       clearTimeout(timer);
       starting = false;
       listening = true;
@@ -50,6 +60,7 @@
     };
 
     rec.onresult = (event) => {
+      if (recognition !== rec) return;
       let interim = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) finalText += event.results[i][0].transcript + ' ';
@@ -59,6 +70,7 @@
     };
 
     rec.onerror = (event) => {
+      if (recognition !== rec) return;
       failed = true;
       reset();
       const messages = {
@@ -67,13 +79,14 @@
         'network': 'Speech recognition is unavailable because the network is offline or the service is unreachable.',
         'no-speech': 'No speech was detected. Try speaking a little louder and closer to the microphone.',
         'audio-capture': 'Your microphone could not be accessed. Check the browser permission and device settings.',
-        'not-allowed': 'Microphone access was blocked. Allow Microphone in your browser’s site settings, then try again.',
         'language-not-supported': 'The chosen language is not supported by this browser for speech recognition.',
       };
       status.textContent = messages[event.error] || (event.error === 'aborted' ? 'Voice input stopped.' : 'Speech recognition failed. Try again.');
     };
 
     rec.onend = () => {
+      if (recognition !== rec) return;
+      recognition = null;
       reset();
       if (finalText.trim() && !failed) {
         input.value = finalText.trim();
@@ -87,20 +100,24 @@
     try {
       rec.start();
       timer = setTimeout(() => {
-        if (starting) {
+        if (starting && recognition === rec) {
+          recognition = null;
           rec.abort();
           reset();
           status.textContent = 'Speech input timed out. Check microphone permission and try again.';
         }
       }, 15000);
     } catch {
+      recognition = null;
       reset();
       status.textContent = 'Could not start speech input. Check browser microphone permissions and try again.';
     }
   });
 
   window.addEventListener('pagehide', () => {
-    recognition?.abort();
+    const previous = recognition;
+    recognition = null;
+    previous?.abort();
     reset();
   });
 })();

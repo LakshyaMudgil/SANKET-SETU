@@ -58,7 +58,7 @@ try{var t=localStorage.getItem("ss-theme")||(matchMedia("(prefers-color-scheme: 
   <main class="stage">
     <section class="card cam-card" aria-label="Camera">
       <h1 class="page-title">Sign → <em class="g1">Speech</em></h1>
-      <p class="page-sub">Track up to two hands in your browser. Try an open palm, closed fist, thumbs up, thumbs down, pointing up, victory, or “I love you” gesture. This is gesture tracking, not ASL or ISL translation.</p>
+      <p class="page-sub">Hold a supported gesture steady for one second to turn it into text, then hear it aloud. This demo recognizes seven gestures; it does not translate full ASL or ISL sentences.</p>
 
       <div class="cam-frame">
         <video id="cam" playsinline muted></video>
@@ -91,7 +91,15 @@ try{var t=localStorage.getItem("ss-theme")||(matchMedia("(prefers-color-scheme: 
 
       <span class="label" id="sentenceLabel">Text</span>
       <div class="sentence" id="sentence" role="textbox" aria-readonly="true" aria-labelledby="sentenceLabel" aria-live="polite"></div>
-      <div class="suggest" id="suggestions" aria-label="Word suggestions"></div>
+      <div class="capture-options">
+        <label><input id="autoCapture" type="checkbox" checked> Automatically add steady signs</label>
+        <label><input id="autoSpeak" type="checkbox" checked> Speak each added sign</label>
+      </div>
+      <details class="gesture-guide">
+        <summary>Supported gestures and their demo meanings</summary>
+        <p>Open palm → HELLO · Closed fist → STOP · Thumbs up → YES · Thumbs down → NO · Pointing up → UP · Victory → VICTORY · I love you handshape → LOVE</p>
+        <p>These are demo word mappings, not a sign-language vocabulary. Show one gesture at a time. Relax your hand for half a second before repeating a word. Turn off automatic capture to use Add gesture manually.</p>
+      </details>
 
       <div class="row">
         <button class="btn primary small" id="speakBtn" type="button">

@@ -68,3 +68,39 @@ test('camera permission denial keeps controls retryable without contacting a rec
   await elements.camToggle.handlers.click();
   assert.equal(attempts, 2);
 });
+
+test('a stale microphone session cannot overwrite a retry', () => {
+  const app = setup();
+  app.elements.micButton.click();
+  const old = app.recognition;
+  old.onerror({error: 'network'});
+  app.elements.micButton.click();
+  app.recognition.onstart();
+  old.onend();
+  assert.equal(app.elements.micButton.attributes['aria-pressed'], 'true');
+  assert.equal(app.elements.micLabel.textContent, 'Listening… (tap to stop)');
+});
+
+test('steady signs become text and speech once, and release permits repetition', async () => {
+  const elements: Record<string, any> = {};
+  for (const id of ['cam','camToggle','handOverlay','skeleton','notice','letter','sentence','handChip','camEmpty','addBtn','spaceBtn','backBtn','clearBtn','speakBtn','autoCapture','autoSpeak']) {
+    elements[id] = {textContent: '', checked: true, dataset: {}, classList: {add() {}}, addEventListener() {}};
+  }
+  const spoken: string[] = [];
+  const context = vm.createContext({document: {getElementById: (id: string) => elements[id]}, window: {addEventListener() {}, speechSynthesis: {cancel() {}, speak(speech: any) {spoken.push(speech.text);}}, SpeechSynthesisUtterance: class { constructor(public text: string) {} }}});
+  vm.runInContext(await readFile('sanketsetu/static/home/sign.js', 'utf8'), context);
+  vm.runInContext("current = 'HELLO'; captureGesture(current, 0); captureGesture(current, 899);", context);
+  assert.equal(elements.sentence.textContent, '');
+  vm.runInContext('captureGesture(current, 900); captureGesture(current, 2000);', context);
+  assert.equal(elements.sentence.textContent, 'HELLO');
+  assert.deepEqual(spoken, ['HELLO']);
+  vm.runInContext("captureGesture('', 2100); captureGesture('', 2700); captureGesture(current, 2800); captureGesture(current, 3800);", context);
+  assert.equal(elements.sentence.textContent, 'HELLO HELLO');
+  elements.autoSpeak.checked = false;
+  vm.runInContext("current = 'YES'; captureGesture(current, 3900); captureGesture(current, 4900);", context);
+  assert.equal(elements.sentence.textContent, 'HELLO HELLO YES');
+  assert.deepEqual(spoken, ['HELLO', 'HELLO']);
+  elements.autoCapture.checked = false;
+  vm.runInContext("current = 'NO'; captureGesture(current, 5000); captureGesture(current, 6000);", context);
+  assert.equal(elements.sentence.textContent, 'HELLO HELLO YES');
+});
